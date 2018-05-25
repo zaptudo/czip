@@ -1,9 +1,21 @@
+// usado para medir o tempo total de execução
 let tempoInicioExecucao = new Date();
 
+// import lib para acesso ao file system
 const fileSystem = require('fs');
 
-let operacao = process.argv[2];
-let caminhoArquivo = process.argv[3];
+
+if(!process.argv[3]){
+    console.error('Caminho inválido');
+}
+
+if(process.argv[2] == 'c'){
+    compactar(caminhoArquivo);
+}
+
+if(process.argv[2] == 'x'){
+    descompactar(caminhoArquivo);    
+}
 
 
 class BufferWriter {
@@ -287,7 +299,7 @@ function salvarArquivo(caminhoArquivo, bufferArquivo){
 
 function compactar(caminhoArquivo){
 
-    // console.log(`Compactando o arquivo ${caminhoArquivo}...`);
+    console.log(`Compactando o arquivo ${caminhoArquivo}...`);
 
     let bufferArquivo = abrirArquivo(caminhoArquivo);
 
@@ -297,22 +309,21 @@ function compactar(caminhoArquivo){
     
     fileSystem.writeFileSync(caminhoArquivo + '.czip', bufferArquivoComprimido);
 
-    // console.log("Concluído.")
-    // console.log("Tamanho do original do arquivo: " + bufferArquivo.length + " bytes");
-    // console.log("Tamanho do arquivo comprimido: " + bufferArquivoComprimido.length + " bytes");
+    console.log("Concluído.")
+    console.log("Tamanho do original do arquivo: " + bufferArquivo.length + " bytes");
+    console.log("Tamanho do arquivo comprimido: " + bufferArquivoComprimido.length + " bytes");
     console.log("Tempo de processamento " + (new Date().getTime() - tempoInicioExecucao.getTime()) + " ms");
 }
 
 function remontarArvore(metadados){
 
-    // Montar a arvore
-    
+    // inicializa a raiz da árvore
     let raiz = new No(null, null, null, null);
 
-    // Percorrer a tabela de codificação
+    // Percorre a tabela de codificação
     for(let indiceSimbolo = 0; indiceSimbolo < metadados.tabela.length; indiceSimbolo++){
 
-        // Obter o código de acordo com o tamanho
+        // Obtém o código de acordo com o tamanho
         let buffer = Buffer.alloc(4);
 
         let qtdBitsCodigo = metadados.tabela[indiceSimbolo].qtdBitsCodigo;
@@ -320,18 +331,15 @@ function remontarArvore(metadados){
         buffer.writeInt32BE(metadados.tabela[indiceSimbolo].codigo << (32 - qtdBitsCodigo));
         let valor = metadados.tabela[indiceSimbolo].valor;
 
-        // descompactar
-
         let noAtual = raiz;
         for(let posicaoBitLeitura = 0; posicaoBitLeitura < qtdBitsCodigo; posicaoBitLeitura++){
 
-            // Ler o código bit a bit 
+            // Lê o código bit a bit 
             let bit = getBit(buffer, posicaoBitLeitura);
 
-            // Criar os nós
+            // Cria os nós
             if(bit === 0){
 
-                // O nó atual possui filho à esquerda? Sim, naveva :  não, cria o nó filho e navega
                 if(!!noAtual.filhoEsquerda){
 
                     noAtual = noAtual.filhoEsquerda;
@@ -339,15 +347,12 @@ function remontarArvore(metadados){
                 } else {
 
                     noAtual.filhoEsquerda = new No(null, null, null, null);
-
                     noAtual = noAtual.filhoEsquerda;
                 }
             }
 
             if(bit === 1){
 
-                // O nó atual possui filho à direita? Sim, naveva :  não, cria o nó filho e navega
-                // O nó atual possui filho à esquerda? Sim, naveva :  não, cria o nó filho e navega
                 if(!!noAtual.filhoDireita){
 
                     noAtual = noAtual.filhoDireita;
@@ -355,7 +360,6 @@ function remontarArvore(metadados){
                 } else {
 
                     noAtual.filhoDireita = new No(null, null, null, null);
-
                     noAtual = noAtual.filhoDireita;
                 }
             }
@@ -391,7 +395,7 @@ function decodificar(bufferArquivoComprimido, metadados, raizArvoreHuffman){
 
 function descompactar(caminhoArquivo){
 
-    //console.log(`Descompactando o arquivo ${caminhoArquivo}...`);
+    console.log(`Descompactando o arquivo ${caminhoArquivo}...`);
 
     let bufferArquivoComprimido = abrirArquivo(caminhoArquivo);
 
@@ -405,18 +409,6 @@ function descompactar(caminhoArquivo){
 
     salvarArquivo(String(caminhoArquivo).replace('.txt.czip', '-descompactado.txt'), bufferArquivoDescomprimido)
 
-    //console.log("Concluído.")
+    console.log("Concluído.")
     console.log("Tempo de processamento " + (new Date().getTime() - tempoInicioExecucao.getTime()) + " ms");
-}
-
-if(!caminhoArquivo){
-    console.error('Caminho inválido');
-}
-
-if(operacao == 'c'){
-    compactar(caminhoArquivo);
-}
-
-if(operacao == 'x'){
-    descompactar(caminhoArquivo);    
 }
